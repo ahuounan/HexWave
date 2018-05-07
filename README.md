@@ -1,2 +1,2 @@
 # HexWave
-HexWave Game
+Browser-based pure javascript game.
