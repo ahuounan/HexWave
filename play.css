@@ -1,0 +1,100 @@
+:root {
+	--c_diam: 0;
+	--c_marg: 0;
+	--c_padd: 0;
+	--c_bord: 0;
+	--b_width: 0;
+	--half_dim: 0;
+	--r: 250;
+	--g: 250;
+	--b: 250;
+	--color: rgba(var(--r), var(--g), var(--b), 0.2);
+	--d_color: rgba(var(--r), var(--g), var(--b), 0.8);
+	--i_color: rgba(calc(255 - var(--r)), calc(255 - var(--g)), calc(255 - var(--b)), 0.9);
+	--id_color: rgba(calc(255 - var(--r)), calc(255 - var(--g)), calc(255 - var(--b)), 0.2);
+}
+
+html {
+	touch-action: manipulation;
+}
+
+body {
+	margin: 0;
+	background-color: rgba(250, 250, 250, 0.9);
+}
+
+.row {
+	clear: left;
+	margin: 0;
+	padding: 0;
+	height: var(--c_diam);
+	width: var(--b_width);
+}
+
+.odd {
+	padding-left: var(--half_dim);
+}
+
+.circle {
+	float: left;
+	border-radius: 50%;
+	height: var(--c_diam);
+	width: var(--c_diam);
+	padding: var(--c_padd);
+	border: var(--c_bord) solid var(--d_color);
+	margin: var(--c_marg);
+	background-color: var(--d_color);
+	box-shadow: 0px calc(var(--c_bord) / 2) var(--c_bord) var(--color);
+}
+
+.select {
+	border-color: black;
+	background-color: gray;
+}
+
+.base {
+	background-color: var(--color);
+	border: var(--c_bord) solid var(--d_color);
+}
+
+.wave {
+	animation-duration: .25s;
+	animation-name: wave;
+}
+
+@keyframes wave {
+	from {
+		background-color: var(--d_color);
+	}
+
+	1% {
+		background-color: var(--color);
+	}
+
+	to {
+		background-color: var(--d_color);
+	}
+}
+
+.lightning {
+	animation-duration: 1s;
+	animation-name: lightning;
+}
+
+@keyframes lightning {
+	from {
+		background-color: var(--id_color);
+	}
+
+	1% {
+		background-color: var(--i_color);
+	}
+
+	to {
+		background-color: var(--id_color);
+	}
+}
+
+.route {
+	background-color: var(--id_color);
+}
