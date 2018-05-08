@@ -1,15 +1,12 @@
 :root {
-	--c_diam: 0;
-	--c_marg: 0;
-	--c_padd: 0;
-	--c_bord: 0;
-	--b_width: 0;
-	--half_dim: 0;
-	--r: 250;
-	--g: 250;
-	--b: 250;
-	--color: rgba(var(--r), var(--g), var(--b), 0.2);
-	--d_color: rgba(var(--r), var(--g), var(--b), 0.8);
+	--total_dim: 10px;
+	--half_dim: calc(var(--total_dim) * 0.5);
+	--r: 200;
+	--g: 200;
+	--b: 200;
+	--h_color: rgba(var(--r), var(--g), var(--b), 1);
+	--color: rgba(var(--r), var(--g), var(--b), 0.8);
+	--d_color: rgba(var(--r), var(--g), var(--b), 0.1);
 	--i_color: rgba(calc(255 - var(--r)), calc(255 - var(--g)), calc(255 - var(--b)), 0.9);
 	--id_color: rgba(calc(255 - var(--r)), calc(255 - var(--g)), calc(255 - var(--b)), 0.2);
 }
@@ -24,11 +21,9 @@ body {
 }
 
 .row {
-	clear: left;
 	margin: 0;
 	padding: 0;
-	height: var(--c_diam);
-	width: var(--b_width);
+	height: var(--total_dim);
 }
 
 .odd {
@@ -37,19 +32,25 @@ body {
 
 .circle {
 	float: left;
+	box-sizing: border-box;
 	border-radius: 50%;
-	height: var(--c_diam);
-	width: var(--c_diam);
-	padding: var(--c_padd);
-	border: var(--c_bord) solid var(--d_color);
-	margin: var(--c_marg);
-	background-color: var(--d_color);
-	box-shadow: 0px calc(var(--c_bord) / 2) var(--c_bord) var(--color);
+	height: var(--total_dim);
+	width: var(--total_dim);
+	padding: 0;
+	border: none;
+	margin: 0;
+	background: linear-gradient(45deg, var(--color), var(--d_color) 20%, white);
+	box-shadow: 0px calc(var(--total_dim) / 10) calc(var(--total_dim) / 10) var(--color);
+}
+
+.circle:hover {
+	transition: 0.1s;
+	background: linear-gradient(45deg, var(--color), var(--d_color) 80%, white);
+	box-shadow: 0px calc(var(--total_dim) / 10) calc(var(--total_dim) / 10) var(--h_color);
 }
 
 .select {
-	border-color: black;
-	background-color: gray;
+	background: black;
 }
 
 .base {

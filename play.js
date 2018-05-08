@@ -1,5 +1,110 @@
+class Game {
+	constructor(gridWidth) {
+		this.gridWidth = gridWidth;
+		this.grid = this.makeGrid();
+		this.speed = 1;
+		this.handlers = {
+			start: function(e) {
+				let circle = game.grid.toCircle(this)
+				if (e.type != "click") {
+					this.classList.toggle("select");
+					propagate( (n) => {draw(getHexA(circle.coords, n), "select", "toggle")}, 2, 0);
+				} else {
+					this.classList.toggle("base");
+					propagate( (n) => {draw(getHexA(circle.coords, n), "base", "toggle")}, 2, 0);
+					startGame();
+				}
+			}
+		}
+		this.setDimensions();
+		this.shuffleColors();
+	}
+
+	makeGrid() {
+		let newGrid = new HexGrid(this, [this.gridWidth, this.gridWidth]);
+		return newGrid;
+	}
+
+	setDimensions() {
+		this.width = window.innerWidth;
+		this.height = window.innerHeight;
+		let smallest = Math.min(this.width, this.height);
+		let total_dim = 10 > (smallest / this.gridWidth) ? 10 : (smallest / this.gridWidth);
+		document.documentElement.style.setProperty("--total_dim", total_dim + "px");
+	}
+
+	shuffleColors() {
+		let r = String(Math.floor(Math.random() * 255));
+		let g = String(Math.floor(Math.random() * 255));
+		let b = String(Math.floor(Math.random() * 255));
+		
+		document.documentElement.style.setProperty("--r", r);
+		document.documentElement.style.setProperty("--g", g);
+		document.documentElement.style.setProperty("--b", b);
+	}
+}
+
+class HexGrid {
+	constructor(game, [height, width]) {
+		this.height = height;
+		this.width = width;
+		this.grid = [];
+		this.game = game;
+
+		for (let y = 0; y < this.height; y++) {
+			for (let x = 0; x < this.width; x++) {
+				this.grid[y * this.width + x] = new Circle(this, [y, x]);
+			}
+		}
+		this.createHtml();
+	}
+
+	circle(row, col) {
+		return this.grid[row * this.width + col];
+	}
+
+	toCircle(dom) {
+		let id = dom.getAttribute("id");
+		let re = (id, i) => {
+			return Number(/#i(\d\d\d)(\d\d\d)/.exec(id)[i]);
+		}
+		let row = re(id, 1);
+		let col = re(id, 2);
+		return this.circle(row, col);
+	}
+
+	createHtml() {
+		let hexContainer = document.createElement("div");
+		hexContainer.classList.add("hex-container");
+		document.body.appendChild(hexContainer);
+
+		let lineCounter = -1
+		for (let circle of this.grid) {
+			if (circle.row != lineCounter) {
+					lineCounter++;
+					var curLine = document.createElement("div");
+					curLine.classList.add("row");
+					let rowType = (circle.row % 2 == 0) ? "even" : "odd";
+					curLine.classList.add(rowType);
+					hexContainer.appendChild(curLine);
+			}
+			circle.dom.classList.add("circle");
+			curLine.appendChild(circle.dom);
+		}
+	}
+
+	setOrigin() {
+		let events = ["mouseenter", "mouseleave", "click"];
+		for (let circle of this.grid) {
+			for (let e of events) {
+				circle.dom.addEventListener(e, this.game.handlers.start);
+			}
+		}
+	}
+}
+
 class Circle {
-	constructor([row, col], grid) {
+	constructor(grid, [row, col]) {
 		this.row = row;
 		this.col = col;
 		this.grid = grid;
@@ -11,7 +116,7 @@ class Circle {
 
 		// Generate circle coordinate
 		newCircle.classList.add("circle");
-		newCircle.setAttribute("id", this.coords);
+		newCircle.setAttribute("id", this.id);
 		return newCircle;
 	}
 
@@ -40,26 +145,16 @@ class Circle {
 		return (Math.abs(offset[0]) + Math.abs(offset[1]) / 2);
 	}
 
-	changeClass(method, class) {
-		this.dom.classList.method(class);
-	}
-}
-
-class HexGrid {
-	constructor(height, width) {
-		this.height = height;
-		this.width = width;
-		this.grid = []
-
-		for (let y = 0; y < this.height; y++) {
-			for let(x = 0, x < this.width; x++) {
-				this.grid.push(new Circle([y, x], this));
-			}
-		}
-	}
-
-	circle(row, col) {
-		return this.content[row * this.width + col]
+	move(dir) {
+		let next_row = 0;
+		let next_col = 0;
+		if(dir.includes("u")) next_row -= 1;
+		if(dir.includes("d")) next_row += 1;
+		if(dir.includes("l")) next_col -= 2 - Math.abs(next_row);
+		if(dir.includes("r")) next_col += 2 - Math.abs(next_row);
+		next_row += this.row;
+		next_col += this.col;
+		return this.grid.circle(next_row, next_col);
 	}
 }
 
@@ -351,4 +446,4 @@ function main() {
 }
 
 let base;
-main();
+// main();
