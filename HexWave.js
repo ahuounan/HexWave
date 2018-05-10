@@ -101,6 +101,30 @@ class HexGrid {
 			}
 		}
 	}
+
+	createRing([aRowDir, aColDir], rad, dir, seg, origin=this.origin) {
+		//aRow, aCol are direction of anchor line. They can be 1 or -1
+		//rad is current radius of ring
+		//dir is 1 for clockwise and -1 for counterclockwise
+		//seg is number of sextants to draw
+		let current = origin.move([aRowDir * rad, aColDir * rad]);
+		let offset = origin.offset(current);
+		let rowDir = Math.abs(offset[0]) / offset[0];
+		let colDir = Math.abs(offset[1]) / offset[1];
+		let x = current.location.x;
+		let y = current.location.y;
+		let s = current.location.s;
+		let result = []
+		let z = (Math.abs((s - 1)) / s == 1) ? (1 - Math.floor(s)) : ((1 - dir * x * y) / 2)
+		//Figure out which way it should move on anchor lines
+
+		for (let i = 0; i < seg * rad; i++) {
+			result.push(current);
+			current = current.move([z * x * dir, -y * dir]);
+		}
+		console.log(result);
+		return result;
+	}
 }
 
 class Circle {
@@ -131,6 +155,14 @@ class Circle {
 		return [this.row, this.col];
 	}
 
+	get location() {
+		let yLoc = Math.abs(this.row) / this.row || 0;
+		let xLoc = Math.abs(this.col) / this.col || 1;
+		let slope = Math.abs(this.row) / Math.abs(this.col)
+
+		return {y: yLoc, x: xLoc, s: slope}
+	}
+
 	offset(target) {
 		return [target.coords[0] - this.coords[0], target.coords[1] - this.coords[1]];
 	}
@@ -145,16 +177,9 @@ class Circle {
 		return (Math.abs(offset[0]) + Math.abs(offset[1]) / 2);
 	}
 
-	move(dir) {
-		let next_row = 0;
-		let next_col = 0;
-		if(dir.includes("u")) next_row -= 1;
-		if(dir.includes("d")) next_row += 1;
-		if(dir.includes("l")) next_col -= 2 - Math.abs(next_row);
-		if(dir.includes("r")) next_col += 2 - Math.abs(next_row);
-		next_row += this.row;
-		next_col += this.col;
-		return this.grid.circle(next_row, next_col);
+	move([row, col]) {
+		col *= (row == 0) ? 2 : 1;
+		return this.grid.circle(this.row + row, this.col + col);
 	}
 }
 
