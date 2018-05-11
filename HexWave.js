@@ -1,9 +1,10 @@
 class Game {
-	constructor(gridWidth) {
-		this.gridWidth = gridWidth;
-		this.grid = this.makeGrid();
+	constructor() {
 		this.speed = 1;
-		this.handlers = {
+	}	
+}
+
+Game.prototype.handlers = {
 			start: function(e) {
 				let circle = game.grid.toCircle(this)
 				if (e.type != "click") {
@@ -16,62 +17,25 @@ class Game {
 				}
 			}
 		}
-		this.setDimensions();
-		this.shuffleColors();
-	}
-
-	makeGrid() {
-		let newGrid = new HexGrid(this, [this.gridWidth, this.gridWidth]);
-		return newGrid;
-	}
-
-	setDimensions() {
-		this.width = window.innerWidth;
-		this.height = window.innerHeight;
-		let smallest = Math.min(this.width, this.height);
-		let total_dim = 10 > (smallest / this.gridWidth) ? 10 : (smallest / this.gridWidth);
-		document.documentElement.style.setProperty("--total_dim", total_dim + "px");
-	}
-
-	shuffleColors() {
-		let g = String(Math.floor(Math.random() * 155));
-		let b = String(Math.floor(Math.random() * 155));
-		let r = String(Math.floor(Math.random() * 155));
-		
-		document.documentElement.style.setProperty("--r", r);
-		document.documentElement.style.setProperty("--g", g);
-		document.documentElement.style.setProperty("--b", b);
-	}
-}
 
 class HexGrid {
-	constructor(game, [height, width]) {
-		this.height = height;
-		this.width = width;
-		this.grid = [];
+	constructor(game, gridRadius) {
 		this.game = game;
+		this.gridRadius = gridRadius;
+		this.grid = [];
 
-		for (let y = 0; y < this.height; y++) {
-			for (let x = 0; x < this.width; x++) {
-				this.grid[y * this.width + x] = new Circle(this, [y, x]);
+		this.setGrid();
+		this.createHtml();
+		this.setCSSColors();
+		this.setCSSDimensions();
+	}
+
+	setGrid() {
+		for (let y = 0; y < this.gridRadius; y++) {
+			for (let x = 0; x < this.gridRadius; x++) {
+				this.grid[y * this.gridRadius + x] = new Circle(this, [y, x]);
 			}
 		}
-		this.createHtml();
-	}
-
-	circle(row, col) {
-		let colFactor = (row % 2 == 0) ? 0 : 1
-		return this.grid[row * this.width + ((col - colFactor) / 2)];
-	}
-
-	toCircle(dom) {
-		let id = dom.getAttribute("id");
-		let re = (id, i) => {
-			return Number(/#i(\d\d\d)(\d\d\d)/.exec(id)[i]);
-		}
-		let row = re(id, 1);
-		let col = re(id, 2);
-		return this.circle(row, col);
 	}
 
 	createHtml() {
@@ -94,6 +58,34 @@ class HexGrid {
 		}
 	}
 
+	setCSSColors() {
+		for (let color of ["r", "g", "b"]) {
+			let random = String(Math.floor(Math.random() * 155));
+			document.documentElement.style.setProperty("--" + color, random);
+		}
+	}
+
+	setCSSDimensions() {
+		let smallest = Math.min(window.innerWidth, window.innerHeight);
+		let total_dim = 10 > (smallest / this.griRadius) ? 10 : (smallest / this.gridRadius);
+		document.documentElement.style.setProperty("--total_dim", total_dim + "px");
+	}
+
+	getCircle(row, col) {
+		let colFactor = (row % 2 == 0) ? 0 : 1
+		return this.grid[row * this.gridRadius + ((col - colFactor) / 2)];
+	}
+
+	toCircle(dom) {
+		let id = dom.getAttribute("id");
+		let re = (id, i) => {
+			return Number(/#i(\d\d\d)(\d\d\d)/.exec(id)[i]);
+		}
+		let row = re(id, 1);
+		let col = re(id, 2);
+		return this.getCircle(row, col);
+	}
+
 	setOrigin() {
 		let events = ["mouseenter", "mouseleave", "click"];
 		for (let circle of this.grid) {
@@ -103,17 +95,13 @@ class HexGrid {
 		}
 	}
 
-	createRing([aRowDir, aColDir], rad, dir, seg, origin=this.origin) {
+	getRing([aRowDir, aColDir], rad, dir, seg, origin=this.origin) {
 		//aRow, aCol are direction of anchor line. They can be 1 or -1
 		//rad is current radius of ring
 		//dir is 1 for clockwise and -1 for counterclockwise
 		//seg is number of sextants to draw
 		let current = origin.move([aRowDir * (rad - 1), aColDir * (rad - 1)]);
-		let offset;
-		let y;
-		let x;
-		let s;
-		let z; 
+		let offset, y, x, s, z;
 		let result = []
 		result.push(current);
 		//Figure out which way it should move on anchor lines
@@ -129,6 +117,7 @@ class HexGrid {
 			}
 			current = current.move([z * x * dir, -y * dir - x * (1 - Math.abs(y))]);
 			result.push(current);
+			current.dom.style.background = "red";
 		}
 		return result;
 	}
@@ -188,22 +177,8 @@ class Circle {
 
 	move([row, col]) {
 		col *= (row == 0) ? 2 : 1;
-		return this.grid.circle(this.row + row, this.col + col);
+		return this.grid.getCircle(this.row + row, this.col + col);
 	}
-}
-
-function getCoords(circle) {
-	let id = circle.getAttribute("id");
-	let row = Number(id.slice(1,4));
-	let col = Number(id.slice(4,7));
-	return [row, col];
-}
-
-function getID(coord) {
-	row_id = String(coord[0]).padStart(3,0);
-	col_id = String(coord[1]).padStart(3,0);
-	let id = `#i${row_id}${col_id}`;
-	return id;
 }
 
 function getRadius(origin, coords) {
@@ -214,20 +189,6 @@ function getRadius(origin, coords) {
 function getDistance(origin, coords) {
 	let offset = getOffset(origin, coords);
 	return Math.sqrt(((offset[0]) ** 2+ ((offset[1]) / 2) ** 2));
-}
-
-function getObject(coord) {
-	return document.querySelector(getID(coord));
-}
-
-function getCircle(origin, offset) {
-	// takes coords, returns coords
-	return [origin[0] + offset[0], origin[1] + offset[1]];
-}
-
-function getOffset(origin, coords) {
-	//takes coords, returns coords
-	return [coords[0] - origin[0], coords[1] - origin[1]];
 }
 
 function getLine(origin, coords, line=[]) {
@@ -250,59 +211,6 @@ function getLine(origin, coords, line=[]) {
 	} else {
 		return line;
 	}
-}
-
-function getHexA(coords, radius) {
-	let row = coords[0];
-	let col = coords[1];
-	let result = []
-	for (r = 0; r <= radius; r++) {
-		result.push([row + r, col + radius * 2 - r])
-		result.push([row + r, col + r - radius * 2])
-	}
-	for (r = -radius; r < 0; r++) {
-		result.push([row + r, col + r + radius * 2])
-		result.push([row + r, col - radius * 2 - r])
-	}
-	for (r = -radius + 2; r < radius - 1; r += 2) {
-		result.push([row + radius, col + r]);
-		result.push([row - radius, col + r]);
-	}
-	return result;
-}
-
-function getHex(origin, target, radius) {
-	let row = origin[0];
-	let col = origin[1];
-	let result = [];
-	let offset = getOffset(origin, target);
-	let t_rad = getRadius(origin, target);
-	let yd = (offset[0] / Math.abs(offset[0])) || 0; //anchor line up or down
-	let xd = (offset[1] / Math.abs(offset[1])) || 1; //anchor line left or right
-	let slope = Math.abs(offset[0] / offset[1])
-	let yr, xr;
-	if (slope != 0 && slope != Infinity && (t_rad <= 7 || slope == 1)) {
-		yr = [-yd, 0];
-		xr = [xd, -2 * xd];
-	} else if	(slope < 1 && slope > 0) {
-		yr = [-yd];
-		xr = [xd];
-	} else if (slope > 1) {
-		yr = [0];
-		xr = [-2 * xd];
-	} else {
-		yr = [-1, 1];
-		xr = [-xd, -xd]
-		xd = 2 * xd
-	}
-
-	for (s = 0; s < yr.length; s++) {
-		for (r = 0; r <= radius; r++) {
-			result.push([row + yd * radius + yr[s] * r,
-			col + xd * radius + xr[s] * r]);
-		}
-	}
-	return result
 }
 
 
@@ -331,21 +239,6 @@ function draw(coords, effect, type) {
 	}
 }
 
-function shuffleColors() {
-	let r = String(Math.floor(Math.random() * 255));
-	let g = String(Math.floor(Math.random() * 255));
-	let b = String(Math.floor(Math.random() * 255));
-	let a = String(Math.round(Math.floor((Math.random() * (10 - 2 + 1) ) + 2) * 100) / 100);
-
-	document.documentElement.style.setProperty("--r", r);
-	document.documentElement.style.setProperty("--g", g);
-	document.documentElement.style.setProperty("--b", b);
-
-	document.documentElement.style.setProperty("--color", `rgba(${r}, ${g}, ${b}, ${a}`);
-	document.documentElement.style.setProperty("--d_color", `rgba(${r}, ${g}, ${b}, 0.1`);
-	document.documentElement.style.setProperty("--i_color", `rgba(${255 - r}, ${255 - g}, ${255 - b}, ${a}`);
-}
-
 function dblClickHandler() {
 	event.preventDefault()
 	propagate((n) => { draw(getHex(base, getCoords(this), n), "wave", "add") }, 100, 1)
@@ -368,60 +261,6 @@ function baseHandler() {
 function clearAnimation() {
 	this.classList.remove("wave");
 	this.classList.remove("lightning");
-}
-
-function generateGrid() {
-	let height = window.innerHeight;
-	let width = window.innerWidth;
-	let total_dim = 10 > (height / 50) ? 10 : (height / 50);
-
-	// Calculating CSS variables
-	dimensions = {
-		b_width: width - total_dim * 0.5,
-		c_diam: total_dim * 0.8,
-		c_marg: -total_dim * 0.03,
-		c_padd: -total_dim * 0.03,
-		c_bord: total_dim * 0.05,
-		half_dim: total_dim * 0.4
-	}
-
-	// Setting CSS Variables
-	for (let i of Object.keys(dimensions)) {
-		let varString = "--" + i;
-		let valString = String(Math.round(dimensions[i] * 1000) / 1000) + "px";
-		document.documentElement.style.setProperty(varString, valString);
-	}
-
-	// Calculate grid dimensions
-	let row_length = Math.floor(dimensions.b_width / (total_dim * 0.84));
-	let column_length = Math.floor(height / (total_dim * 0.84));
-
-	// Generate grid
-	for (let j = 0; j < column_length; j++) {
-		let newRow = document.createElement("div");
-		newRow.classList.add("row");
-
-		// Add rows to grid
-		let odd = !(j % 2 == 0);
-		if (odd) {
-			newRow.classList.add("odd");
-			var start = 1;
-		} else {
-			var start = 0;
-		}
-		document.body.appendChild(newRow);
-
-		// Add circles to row
-		for (let i = start; i < row_length * 2; i += 2) {
-			let newCircle = document.createElement("div");
-
-			// Generate circle coordinate
-			let coord = "i" + String(j).padStart(3,0) + String(i).padStart(3,0);
-			newCircle.classList.add("circle");
-			newCircle.setAttribute("id",coord);
-			newRow.appendChild(newCircle);
-		}
-	}
 }
 
 function redraw() {
