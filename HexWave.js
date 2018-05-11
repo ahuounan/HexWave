@@ -34,9 +34,9 @@ class Game {
 	}
 
 	shuffleColors() {
-		let r = String(Math.floor(Math.random() * 255));
-		let g = String(Math.floor(Math.random() * 255));
-		let b = String(Math.floor(Math.random() * 255));
+		let g = String(Math.floor(Math.random() * 155));
+		let b = String(Math.floor(Math.random() * 155));
+		let r = String(Math.floor(Math.random() * 155));
 		
 		document.documentElement.style.setProperty("--r", r);
 		document.documentElement.style.setProperty("--g", g);
@@ -60,7 +60,8 @@ class HexGrid {
 	}
 
 	circle(row, col) {
-		return this.grid[row * this.width + col];
+		let colFactor = (row % 2 == 0) ? 0 : 1
+		return this.grid[row * this.width + ((col - colFactor) / 2)];
 	}
 
 	toCircle(dom) {
@@ -107,22 +108,28 @@ class HexGrid {
 		//rad is current radius of ring
 		//dir is 1 for clockwise and -1 for counterclockwise
 		//seg is number of sextants to draw
-		let current = origin.move([aRowDir * rad, aColDir * rad]);
-		let offset = origin.offset(current);
-		let rowDir = Math.abs(offset[0]) / offset[0];
-		let colDir = Math.abs(offset[1]) / offset[1];
-		let x = current.location.x;
-		let y = current.location.y;
-		let s = current.location.s;
+		let current = origin.move([aRowDir * (rad - 1), aColDir * (rad - 1)]);
+		let offset;
+		let y;
+		let x;
+		let s;
+		let z; 
 		let result = []
-		let z = (Math.abs((s - 1)) / s == 1) ? (1 - Math.floor(s)) : ((1 - dir * x * y) / 2)
+		result.push(current);
 		//Figure out which way it should move on anchor lines
-
-		for (let i = 0; i < seg * rad; i++) {
+		for (let i = 0; i < seg * (rad - 1); i++) {
+			offset = origin.offset(current);
+			y = Math.abs(offset[0]) / offset[0] || 0;
+			x = Math.abs(offset[1]) / offset[1] || 1;
+			s = Math.abs(offset[0] / offset[1]);
+			if (Math.abs(s) != 1) {
+				z = (Math.abs(s) > 1) ? 0 : 1;
+			} else {
+				z = (1 - dir * x * y) / 2
+			}
+			current = current.move([z * x * dir, -y * dir - x * (1 - Math.abs(y))]);
 			result.push(current);
-			current = current.move([z * x * dir, -y * dir]);
 		}
-		console.log(result);
 		return result;
 	}
 }
@@ -130,7 +137,8 @@ class HexGrid {
 class Circle {
 	constructor(grid, [row, col]) {
 		this.row = row;
-		this.col = col;
+		let colFactor = (this.row % 2 == 0) ? 0 : 1
+		this.col = col * 2 + colFactor ;
 		this.grid = grid;
 		this.dom = this.createDOM();
 	}
@@ -155,9 +163,10 @@ class Circle {
 		return [this.row, this.col];
 	}
 
-	get location() {
-		let yLoc = Math.abs(this.row) / this.row || 0;
-		let xLoc = Math.abs(this.col) / this.col || 1;
+	location(origin) {
+		let offset = origin.offset()
+		let yLoc = Math.abs(this.row - origin.row) / (this.row - origin.row) || 0;
+		let xLoc = Math.abs(this.col - origin.col) / (this.col - origin.col) || 1;
 		let slope = Math.abs(this.row) / Math.abs(this.col)
 
 		return {y: yLoc, x: xLoc, s: slope}
