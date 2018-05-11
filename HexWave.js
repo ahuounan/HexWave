@@ -32,9 +32,12 @@ class HexGrid {
 
 	setGrid() {
 		for (let y = 0; y < this.gridRadius; y++) {
-			for (let x = 0; x < this.gridRadius; x++) {
-				this.grid[y * this.gridRadius + x] = new Circle(this, [y, x]);
+			let newRow = [];
+			let start = (y % 2) == 0 ? 0 : 1;
+			for (let x = start; x < this.gridRadius; x += 2) {
+				newRow.push(new Circle(this, [y, x]));
 			}
+			this.grid.push(newRow);
 		}
 	}
 
@@ -43,18 +46,18 @@ class HexGrid {
 		hexContainer.classList.add("hex-container");
 		document.body.appendChild(hexContainer);
 
-		let lineCounter = -1
-		for (let circle of this.grid) {
-			if (circle.row != lineCounter) {
-					lineCounter++;
-					var curLine = document.createElement("div");
-					curLine.classList.add("row");
-					let rowType = (circle.row % 2 == 0) ? "even" : "odd";
-					curLine.classList.add(rowType);
-					hexContainer.appendChild(curLine);
+		let rowCount = 0
+		for (let row of this.grid) {
+			var curLine = document.createElement("div");
+			curLine.classList.add("row");
+			let rowType = (rowCount % 2 == 0) ? "even" : "odd";
+			curLine.classList.add(rowType);
+			hexContainer.appendChild(curLine);
+			rowCount++;
+			for (var circle of row) {
+				circle.dom.classList.add("circle");
+				curLine.appendChild(circle.dom);
 			}
-			circle.dom.classList.add("circle");
-			curLine.appendChild(circle.dom);
 		}
 	}
 
@@ -71,9 +74,10 @@ class HexGrid {
 		document.documentElement.style.setProperty("--total_dim", total_dim + "px");
 	}
 
-	getCircle(row, col) {
-		let colFactor = (row % 2 == 0) ? 0 : 1
-		return this.grid[row * this.gridRadius + ((col - colFactor) / 2)];
+	getCircle([row, col]) {
+		let colAdj = (row % 2) == 0 ? 0 : 1;
+		if (this.grid[row] == undefined) return undefined;
+		return this.grid[row][(col - colAdj) / 2];
 	}
 
 	toCircle(dom) {
@@ -83,7 +87,7 @@ class HexGrid {
 		}
 		let row = re(id, 1);
 		let col = re(id, 2);
-		return this.getCircle(row, col);
+		return this.getCircle([row, col]);
 	}
 
 	setOrigin() {
@@ -100,13 +104,20 @@ class HexGrid {
 		//rad is current radius of ring
 		//dir is 1 for clockwise and -1 for counterclockwise
 		//seg is number of sextants to draw
-		let current = origin.move([aRowDir * (rad - 1), aColDir * (rad - 1)]);
+		console.log(seg);
+		let oCrds = origin.coords;
+		let cCrds = [oCrds[0] + aRowDir * (rad - 1), oCrds[1] + aColDir * (rad - 1)];
 		let offset, y, x, s, z;
-		let result = []
-		result.push(current);
+		let result = [];
 		//Figure out which way it should move on anchor lines
-		for (let i = 0; i < seg * (rad - 1); i++) {
-			offset = origin.offset(current);
+		for (let i = 0; i <= seg * (rad - 1); i++) {
+			let circle = this.getCircle(cCrds);
+			if (circle != undefined) {
+				result.push(circle)
+				circle.dom.style.background = "red";
+			}
+
+			offset = [cCrds[0] - oCrds[0], cCrds[1] - oCrds[1]];
 			y = Math.abs(offset[0]) / offset[0] || 0;
 			x = Math.abs(offset[1]) / offset[1] || 1;
 			s = Math.abs(offset[0] / offset[1]);
@@ -115,9 +126,10 @@ class HexGrid {
 			} else {
 				z = (1 - dir * x * y) / 2
 			}
-			current = current.move([z * x * dir, -y * dir - x * (1 - Math.abs(y))]);
-			result.push(current);
-			current.dom.style.background = "red";
+			let nextRow = z * x * dir;
+			let nextCol = - y * dir - x * (1 - Math.abs(y));
+			nextCol *= (nextRow == 0) ? 2 : 1
+			cCrds = [cCrds[0] + nextRow, cCrds[1] + nextCol];
 		}
 		return result;
 	}
@@ -126,8 +138,7 @@ class HexGrid {
 class Circle {
 	constructor(grid, [row, col]) {
 		this.row = row;
-		let colFactor = (this.row % 2 == 0) ? 0 : 1
-		this.col = col * 2 + colFactor ;
+		this.col = col;
 		this.grid = grid;
 		this.dom = this.createDOM();
 	}
@@ -177,9 +188,10 @@ class Circle {
 
 	move([row, col]) {
 		col *= (row == 0) ? 2 : 1;
-		return this.grid.getCircle(this.row + row, this.col + col);
+		return this.grid.getCircle([this.row + row, this.col + col]);
 	}
 }
+
 
 function getRadius(origin, coords) {
 	let offset = getOffset(origin, coords);
