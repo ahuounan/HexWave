@@ -1,10 +1,9 @@
 class Game {
-	constructor() {
+	constructor(gridWidth) {
+		this.gridWidth = gridWidth;
+		this.grid = this.makeGrid();
 		this.speed = 1;
-	}
-}
-
-Game.prototype.handlers = {
+		this.handlers = {
 			start: function(e) {
 				let circle = game.grid.toCircle(this)
 				if (e.type != "click") {
@@ -17,41 +16,64 @@ Game.prototype.handlers = {
 				}
 			}
 		}
-
-class HexGrid {
-	constructor(game, gridRadius) {
-		this.gridRadius = gridRadius
-		this.grid = [];
-		this.game = game;
-		
-		this.setGrid();
-		this.setCSSDimensions();
-		this.setCSSColors();
-		this.setHtml();
+		this.setDimensions();
+		this.shuffleColors();
 	}
 
-	setGrid() {
+	makeGrid() {
+		let newGrid = new HexGrid(this, [this.gridWidth, this.gridWidth]);
+		return newGrid;
+	}
+
+	setDimensions() {
+		this.width = window.innerWidth;
+		this.height = window.innerHeight;
+		let smallest = Math.min(this.width, this.height);
+		let total_dim = 10 > (smallest / this.gridWidth) ? 10 : (smallest / this.gridWidth);
+		document.documentElement.style.setProperty("--total_dim", total_dim + "px");
+	}
+
+	shuffleColors() {
+		let r = String(Math.floor(Math.random() * 255));
+		let g = String(Math.floor(Math.random() * 255));
+		let b = String(Math.floor(Math.random() * 255));
+		
+		document.documentElement.style.setProperty("--r", r);
+		document.documentElement.style.setProperty("--g", g);
+		document.documentElement.style.setProperty("--b", b);
+	}
+}
+
+class HexGrid {
+	constructor(game, [height, width]) {
+		this.height = height;
+		this.width = width;
+		this.grid = [];
+		this.game = game;
+
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
 				this.grid[y * this.width + x] = new Circle(this, [y, x]);
 			}
 		}
+		this.createHtml();
 	}
 
-	setCSSDimensions() {
-		let smallest = Math.min(window.innerWidth, window.innerHeight);
-		let total_dim = 10 > (smallest / this.gridRadius) ? 10 : (smallest / this.gridRadius);
-		document.documentElement.style.setProperty("--total_dim", total_dim + "px");
+	circle(row, col) {
+		return this.grid[row * this.width + col];
 	}
 
-	setCSSColors() {
-		for (colors of ["r", "g", "b"]) {
-			let random = String(Math.floor(Math.random() * 155));
-			document.documentElement.style.setProperty("--" + color, random)
+	toCircle(dom) {
+		let id = dom.getAttribute("id");
+		let re = (id, i) => {
+			return Number(/#i(\d\d\d)(\d\d\d)/.exec(id)[i]);
 		}
+		let row = re(id, 1);
+		let col = re(id, 2);
+		return this.circle(row, col);
 	}
 
-	setHtml() {
+	createHtml() {
 		let hexContainer = document.createElement("div");
 		hexContainer.classList.add("hex-container");
 		document.body.appendChild(hexContainer);
@@ -69,20 +91,6 @@ class HexGrid {
 			circle.dom.classList.add("circle");
 			curLine.appendChild(circle.dom);
 		}
-	}
-
-	circle(row, col) {
-		return this.grid[row * this.width + col];
-	}
-
-	toCircle(dom) {
-		let id = dom.getAttribute("id");
-		let re = (id, i) => {
-			return Number(/#i(\d\d\d)(\d\d\d)/.exec(id)[i]);
-		}
-		let row = re(id, 1);
-		let col = re(id, 2);
-		return this.circle(row, col);
 	}
 
 	setOrigin() {
