@@ -34,7 +34,7 @@ class HexGrid {
 		for (let y = 0; y < this.gridRadius; y++) {
 			let newRow = [];
 			let start = (y % 2) == 0 ? 0 : 1;
-			for (let x = start; x < this.gridRadius; x += 2) {
+			for (let x = start; x < this.gridRadius * 2; x += 2) {
 				newRow.push(new Circle(this, [y, x]));
 			}
 			this.grid.push(newRow);
