@@ -1,6 +1,7 @@
 :root {
 	--total_dim: 10px;
 	--half_dim: calc(var(--total_dim) * 0.5);
+	--gridRadius: 0px;
 	--r: 200;
 	--g: 200;
 	--b: 200;
@@ -20,8 +21,14 @@ body {
 	background-color: rgba(250, 250, 250, 0.9);
 }
 
+.hex-container {
+	margin: auto;
+	width: var(--gridRadius);
+}
+
 .row {
 	margin: 0;
+	width: 100%;
 	padding: 0;
 	height: var(--total_dim);
 }
@@ -36,26 +43,23 @@ body {
 	border-radius: 50%;
 	height: var(--total_dim);
 	width: var(--total_dim);
-	padding: 0;
-	border: none;
-	margin: 0;
 	background: linear-gradient(45deg, var(--color), var(--d_color) 20%, white);
 	box-shadow: 0px calc(var(--total_dim) / 10) calc(var(--total_dim) / 10) var(--color);
 }
 
-.circle:hover {
+/*.circle:hover {
 	transition: 0.1s;
 	background: linear-gradient(45deg, var(--color), var(--d_color) 80%, white);
 	box-shadow: 0px calc(var(--total_dim) / 10) calc(var(--total_dim) / 10) var(--h_color);
-}
+}*/
 
 .select {
-	background: black;
+	background: linear-gradient(45deg, var(--color) 20%, white);
 }
 
 .base {
-	background-color: var(--color);
 	border: var(--c_bord) solid var(--d_color);
+	background: var(--h_color);
 }
 
 .wave {
@@ -84,15 +88,15 @@ body {
 
 @keyframes lightning {
 	from {
-		background-color: var(--id_color);
+		background: var(--id_color);
 	}
 
 	1% {
-		background-color: var(--i_color);
+		background: var(--i_color);
 	}
 
 	to {
-		background-color: var(--id_color);
+		background: var(--id_color);
 	}
 }
 
